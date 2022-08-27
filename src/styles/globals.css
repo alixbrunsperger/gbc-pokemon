@@ -1,0 +1,91 @@
+html,
+body {
+  padding: 0;
+  margin: 0;
+  font-family: monospace, sans-serif;
+  font-weight: 100;
+  background-color:beige;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+h1 {
+  font-weight: 100;
+}
+
+.card-main {
+  border: 2px solid black;
+  border-radius: 10px;
+  margin: 10%;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+}
+
+.card-img,
+.card-link {
+  text-align: center;
+  width: 100%;
+}
+
+.card-data {
+  align-self: center;
+  line-height: 30px;
+  text-transform: uppercase;
+}
+
+.card-text {
+  border-top: 3px solid black;
+  padding: 15px;
+  grid-column: span 2;
+}
+
+.card-link {
+  grid-column: span 2;
+}
+
+.pokemon-light-card {
+  text-transform: uppercase;
+  line-height: 30px;
+}
+
+.light-card-number {
+  display: inline-block;
+  margin-right: 15px;
+}
+
+a:hover {
+  text-decoration: underline;
+}
+
+.main {
+  border: 2px solid black;
+  border-radius: 10px;
+  margin: 10%;
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+}
+
+.main-list {
+  padding: 15px;
+}
+
+.main-panel {
+  border-left: 3px solid black;
+}
+
+.main-panel-top,
+.main-panel-bottom {
+  padding: 15px;
+  line-height: 30px;
+}
+
+.main-panel-bottom {
+  border-top: 3px solid black;
+}

@@ -1,69 +1,64 @@
-import React, { Fragment } from "react";
-import type { NextPage } from "next";
+import React from "react";
+import type { NextPage, GetStaticProps, GetStaticPaths } from "next";
 import Image from "next/image";
-import { useQuery } from "react-query";
-import axios from "axios";
-import Page404 from "../../components/Page404";
+import { useQuery, dehydrate, QueryClient, UseQueryResult } from "react-query";
 import { useRouter } from "next/router";
-import { PokemonType } from "../../types/types";
+import { PokemonType, ErrorType } from "../../types/types";
+import { fetchPokemon } from "../../utils/dataFetch";
 import Link from "next/link";
+import GameBoyContainer from "../../components/GameBoyContainer";
+import PokemonCard from "../../components/PokemonCard";
+
+export const getStaticProps: GetStaticProps = async (context) => {
+  const name = context.params?.name as string;
+  const queryClient = new QueryClient();
+
+  await queryClient.prefetchQuery(["getPokemon", name], () =>
+    fetchPokemon(name)
+  );
+
+  const data = queryClient.getQueryData(["getPokemon", name]);
+
+  return {
+    props: {
+      dehydratedState: dehydrate(queryClient),
+    },
+    notFound: !data,
+  };
+};
+
+export const getStaticPaths: GetStaticPaths = async () => {
+  return {
+    paths: [],
+    fallback: "blocking",
+  };
+};
 
 const PokemonPage: NextPage = () => {
   const router = useRouter();
-  const { name } = router.query;
-  const id: string = "pokemon-" + name;
+  const pokemonName: string =
+    typeof router.query?.name === "string" ? router.query.name : "";
+  const queryResult: UseQueryResult<PokemonType, ErrorType> = useQuery(
+    ["getPokemon", pokemonName],
+    () => fetchPokemon(pokemonName),
+    {
+      enabled: pokemonName.length > 0,
+    }
+  );
+  const { data, isError, error } = queryResult;
 
-  const { data, status, error } = useQuery<PokemonType, Error>(id, async () => {
-    const res = await axios.get("https://pokeapi.co/api/v2/pokemon/" + name);
-    return res.data;
-  });
-
-  if (status === "loading") return <h1>Loading...</h1>;
-  if (status === "error") {
-    if (error && error.message == "Request failed with status code 404") {
-      return <Page404 />;
+  if (isError) {
+    if (error.response.status == 404) {
+      return <span>Not found...</span>;
     } else {
-      if (status === "error") return <span>Error...</span>;
+      return <span>Error...</span>;
     }
   }
 
   return (
-    <div>
-      {data && (
-        <div className="card-main">
-          <div className="card-img">
-            <Image
-              src={data.sprites.front_default}
-              alt="pokemon default picture"
-              width="200"
-              height="200"
-            />
-            <div className="card-id">N° {data.id}</div>
-          </div>
-          <div className="card-data">
-            {data.name}
-            <br />
-            TYPE
-            <br />
-            {`HEIGHT    ${data.height} '`}
-            <br />
-            {`WEIGHT    ${data.weight} lb`}
-          </div>
-          <div className="card-text">
-            Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do
-            eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim
-            ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut
-            aliquip ex ea commodo consequat. Duis aute irure dolor in
-            reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla
-            pariatur. Excepteur sint occaecat cupidatat non proident, sunt in
-            culpa qui officia deserunt mollit anim id est laborum.
-          </div>
-          <div className="card-link">
-            <Link href="/">Back to list</Link>
-          </div>
-        </div>
-      )}
-    </div>
+    <GameBoyContainer classAddon="card">
+      {data && <PokemonCard pokemon={data} />}
+    </GameBoyContainer>
   );
 };
 

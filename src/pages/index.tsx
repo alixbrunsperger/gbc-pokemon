@@ -1,51 +1,48 @@
-import type { NextPage } from "next";
-import { useQuery } from "react-query";
-import axios from "axios";
-import { PokemonLightType } from "../types/types";
-import PokemonCardLight from "../components/PokemonCardLight";
+import type { GetServerSideProps, NextPage } from "next";
+import { dehydrate, QueryClient, useQuery, UseQueryResult } from "react-query";
+import { ErrorType, PokemonLightType } from "../types/types";
+import { fetchPokemons } from "../utils/dataFetch";
+import GameBoyContainer from "../components/GameBoyContainer";
+import PokemonListContent from "../components/PokemonListContent";
+import PokemonListSidePanel from "../components/PokemonListSidePanel";
+
+export const getServerSideProps: GetServerSideProps = async (context) => {
+  const queryClient = new QueryClient();
+  await queryClient.prefetchQuery("getPokemons", () => fetchPokemons());
+  const data = queryClient.getQueryData("getPokemons");
+
+  return {
+    props: {
+      dehydratedState: dehydrate(queryClient),
+    },
+    notFound: !data,
+  };
+};
+
+interface QueryResultType {
+  results: PokemonLightType[];
+}
 
 const Home: NextPage = () => {
-  const { data, status } = useQuery("pokemons", async () => {
-    const res = await axios.get("https://pokeapi.co/api/v2/pokemon?limit=7");
-    return res.data;
-  });
+  const queryResult: UseQueryResult<QueryResultType, ErrorType> = useQuery(
+    "pokemons",
+    () => fetchPokemons()
+  );
+  const { data, isError, error } = queryResult;
 
-  if (status === "loading") return <h1>Loading...</h1>;
-  if (status === "error") return <span>Error...</span>;
+  if (isError) {
+    if (error.response.status == 404) {
+      return <span>Not found...</span>;
+    } else {
+      return <span>Error...</span>;
+    }
+  }
 
   return (
-    <section className="main">
-      <div className="main-list">
-        <h1>CONTENTS</h1>
-        {data.results &&
-          data.results.map((item: PokemonLightType, index: number) => (
-            <PokemonCardLight
-              key={index}
-              pokemonLight={item}
-              index={index + 1}
-            />
-          ))}
-      </div>
-      <div className="main-panel">
-        <div className="main-panel-top">
-          SEEN
-          <br />
-          3<br />
-          OWN
-          <br />1
-        </div>
-        <div className="main-panel-bottom">
-          DATA
-          <br />
-          CRY
-          <br />
-          AREA
-          <br />
-          QUIT
-          <br />
-        </div>
-      </div>
-    </section>
+    <GameBoyContainer classAddon="list">
+      <PokemonListContent pokemons={data ? data.results : []} />
+      <PokemonListSidePanel />
+    </GameBoyContainer>
   );
 };
 
